@@ -1,3 +1,9 @@
+# About this fork
+
+This is an experimental fork of [nginx/nginx](https://github.com/nginx/nginx), extending it with support for HTTP 103 Early Hints and static preload logic.  
+Full documentation is available in [README.early-hints.md](./README.early-hints.md).
+
+
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://github.com/user-attachments/assets/9335b488-ffcc-4157-8364-2370a0b70ad0">
   <source media="(prefers-color-scheme: light)" srcset="https://github.com/user-attachments/assets/3a7eeb08-1133-47f5-859c-fad4f5a6a013">
