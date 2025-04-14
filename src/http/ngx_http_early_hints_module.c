@@ -81,10 +81,21 @@ ngx_int_t ngx_http_add_custom_early_hint_links(ngx_http_request_t *r)
         return NGX_ERROR;
     }
 
-    ngx_str_t paths[] = {global_path, custom_path};
+    ngx_str_t files_to_try[2];
+    ngx_uint_t count = 0;
 
-    for (int i = 0; i < 2; i++) {
-        ngx_str_t path = paths[i];
+    ngx_file_info_t fi;
+    if (ngx_file_info((const char *) custom_path.data, &fi) != NGX_FILE_ERROR && ngx_is_file(&fi)) {
+        files_to_try[count++] = custom_path;
+        files_to_try[count++] = global_path;
+    } else {
+        ngx_log_error(NGX_LOG_WARN, r->connection->log, 0,
+            "early hints: custom file not found, skipping global: %V", &custom_path);
+        return NGX_OK;
+    }
+
+    for (ngx_uint_t i = 0; i < count; i++) {
+        ngx_str_t path = files_to_try[i];
 
         ngx_log_error(NGX_LOG_WARN, r->connection->log, 0,
             "early hints: attempting file: %V", &path);
