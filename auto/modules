@@ -370,6 +370,17 @@ if [ $HTTP = YES ]; then
         . auto/module
     fi
 
+    if :; then
+        ngx_module_name=ngx_http_early_hints_module
+        ngx_module_incs=
+        ngx_module_deps=
+        ngx_module_srcs=src/http/ngx_http_early_hints_module.c
+        ngx_module_libs=
+        ngx_module_link=YES
+
+        . auto/module
+    fi
+
 
     ngx_module_type=HTTP_INIT_FILTER
     HTTP_INIT_FILTER_MODULES=
