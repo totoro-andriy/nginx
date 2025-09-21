@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - early-hints-root
+      - master
 
 jobs:
   patch:
@@ -23,7 +23,7 @@ jobs:
 
       - name: Rebase onto upstream
         run: |
-          git checkout early-hints-root
+          git checkout master
           git rebase upstream/master || true
 
       - name: Generate patch (exclude README files)
