@@ -58,8 +58,8 @@ jobs:
       - name: Skip if patch unchanged
         run: |
           if gh release view latest &>/dev/null; then
-            gh release download latest --pattern early_hints.patch --dir .
-            if cmp -s early_hints.patch early_hints.patch.old; then
+            gh release download latest --pattern early_hints.patch --dir . --output early_hints_old.patch
+            if cmp -s early_hints.patch early_hints_old.patch; then
               echo "⏹ Patch is unchanged, skipping release."
               exit 0
             fi
