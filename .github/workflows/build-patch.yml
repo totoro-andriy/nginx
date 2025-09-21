@@ -2,7 +2,7 @@ name: Build Early Hints Patch
 
 on:
   schedule:
-    - cron: '0 3 * * *'
+    - cron: '0 3 * * *'   # щодня о 03:00 UTC
   workflow_dispatch:
   push:
     branches:
@@ -26,14 +26,36 @@ jobs:
           git checkout master
           git rebase upstream/master || true
 
-      - name: Generate patch (exclude README files)
+      - name: Generate patch (exclude README/.gitattributes, add header)
         run: |
-          PATCH="early_hints_patch_${{ github.run_id }}.patch"
-          git format-patch upstream/master..HEAD --stdout \
-            -- . ':(exclude)README.md' ':(exclude)README.early-hints.md' > "$PATCH"
+          PATCH="early_hints.patch"
+          {
+            echo "#"
+            echo "# Early Hints patch for Nginx"
+            echo "# Documentation: https://github.com/${{ github.repository }}/blob/master/README.early-hints.md"
+            echo "# Generated on $(date -u +"%Y-%m-%d %H:%M:%S UTC")"
+            echo "#"
+            git format-patch upstream/master..HEAD --stdout \
+              -- . \
+              ':(exclude)README.md' \
+              ':(exclude)README.early-hints.md' \
+              ':(exclude).gitattributes' \
+              ':(exclude).github/workflows/build-patch.yml'
+          } > "$PATCH"
           echo "PATCH=$PATCH" >> $GITHUB_ENV
 
-      - uses: actions/upload-artifact@v4
+      - name: Delete old "latest" release and tag
+        run: |
+          gh release delete latest --yes || true
+          git push origin :refs/tags/latest || true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish patch as GitHub Release asset
+        uses: softprops/action-gh-release@v2
         with:
-          name: early-hints-patch
-          path: ${{ env.PATCH }}
+          tag_name: latest
+          name: Early Hints Patch
+          files: ${{ env.PATCH }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
