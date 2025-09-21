@@ -11,6 +11,9 @@ on:
 jobs:
   patch:
     runs-on: ubuntu-latest
+    env:
+      TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+      TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -20,6 +23,15 @@ jobs:
         run: |
           git remote add upstream https://github.com/nginx/nginx.git || true
           git fetch upstream --prune
+
+      - name: Check upstream changes
+        run: |
+          UPSTREAM_COMMIT=$(git rev-parse upstream/master)
+          LOCAL_BASE=$(git merge-base HEAD upstream/master)
+          if [ "$UPSTREAM_COMMIT" = "$LOCAL_BASE" ]; then
+            echo "⏹ No upstream changes, skipping build."
+            exit 0
+          fi
 
       - name: Rebase onto upstream
         run: |
@@ -44,6 +56,16 @@ jobs:
           } > "$PATCH"
           echo "PATCH=$PATCH" >> $GITHUB_ENV
 
+      - name: Skip if patch unchanged
+        run: |
+          if gh release view latest &>/dev/null; then
+            gh release download latest --pattern early_hints.patch --dir .
+            if cmp -s early_hints.patch early_hints.patch.old; then
+              echo "⏹ Patch is unchanged, skipping release."
+              exit 0
+            fi
+          fi
+
       - name: Delete old "latest" release and tag
         run: |
           gh release delete latest --yes || true
@@ -65,8 +87,8 @@ jobs:
         run: |
           URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           MSG="✅ Early Hints patch build SUCCEEDED for repo ${{ github.repository }} on $(date -u +'%Y-%m-%d %H:%M:%S UTC')%0A🔗 $URL"
-          curl -s -X POST https://api.telegram.org/bot${{ secrets.TG_BOT_TOKEN }}/sendMessage \
-            -d chat_id=${{ secrets.TG_CHAT_ID }} \
+          curl -s -X POST https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage \
+            -d chat_id=${TG_CHAT_ID} \
             -d text="$MSG"
 
       - name: Notify Telegram on failure
@@ -74,7 +96,6 @@ jobs:
         run: |
           URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           MSG="❌ Early Hints patch build FAILED for repo ${{ github.repository }} on $(date -u +'%Y-%m-%d %H:%M:%S UTC')%0A🔗 $URL"
-          curl -s -X POST https://api.telegram.org/bot${{ secrets.TG_BOT_TOKEN }}/sendMessage \
-            -d chat_id=${{ secrets.TG_CHAT_ID }} \
+          curl -s -X POST https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage \
+            -d chat_id=${TG_CHAT_ID} \
             -d text="$MSG"
-            
