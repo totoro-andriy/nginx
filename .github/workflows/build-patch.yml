@@ -38,7 +38,7 @@ jobs:
           git checkout master
           git rebase upstream/master || true
 
-      - name: Generate patch (exclude README/.gitattributes, add header)
+      - name: Generate patch (stable diff, exclude docs and workflow)
         run: |
           PATCH="early_hints.patch"
           {
@@ -46,7 +46,9 @@ jobs:
             echo "# Early Hints patch for Nginx"
             echo "# Documentation: https://github.com/${{ github.repository }}/blob/master/README.early-hints.md"
             echo "#"
-            git format-patch upstream/master..HEAD --stdout \
+            echo "From $(git rev-parse upstream/master)"
+            echo
+            git diff upstream/master..HEAD \
               -- . \
               ':(exclude)README.md' \
               ':(exclude)README.early-hints.md' \
