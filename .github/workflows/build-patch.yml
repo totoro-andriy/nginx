@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 name: Build Early Hints Patch
 
 on:
@@ -59,3 +60,84 @@ jobs:
           files: ${{ env.PATCH }}
         env:
           GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
+=======
+name: Build Early Hints Patch
+
+on:
+  schedule:
+    - cron: '0 3 * * *'   # щодня о 03:00 UTC
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Add upstream
+        run: |
+          git remote add upstream https://github.com/nginx/nginx.git || true
+          git fetch upstream --prune
+
+      - name: Rebase onto upstream
+        run: |
+          git checkout master
+          git rebase upstream/master || true
+
+      - name: Generate patch (exclude README/.gitattributes, add header)
+        run: |
+          PATCH="early_hints.patch"
+          {
+            echo "#"
+            echo "# Early Hints patch for Nginx"
+            echo "# Documentation: https://github.com/${{ github.repository }}/blob/master/README.early-hints.md"
+            echo "# Generated on $(date -u +"%Y-%m-%d %H:%M:%S UTC")"
+            echo "#"
+            git format-patch upstream/master..HEAD --stdout \
+              -- . \
+              ':(exclude)README.md' \
+              ':(exclude)README.early-hints.md' \
+              ':(exclude).gitattributes' \
+              ':(exclude).github/workflows/build-patch.yml'
+          } > "$PATCH"
+          echo "PATCH=$PATCH" >> $GITHUB_ENV
+
+      - name: Delete old "latest" release and tag
+        run: |
+          gh release delete latest --yes || true
+          git push origin :refs/tags/latest || true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish patch as GitHub Release asset
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: Early Hints Patch
+          files: ${{ env.PATCH }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
+
+      - name: Notify Telegram on success
+        if: success()
+        run: |
+          URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          MSG="✅ Early Hints patch build SUCCEEDED for repo ${{ github.repository }} on $(date -u +'%Y-%m-%d %H:%M:%S UTC')%0A🔗 $URL"
+          curl -s -X POST https://api.telegram.org/bot${{ secrets.TG_BOT_TOKEN }}/sendMessage \
+            -d chat_id=${{ secrets.TG_CHAT_ID }} \
+            -d text="$MSG"
+
+      - name: Notify Telegram on failure
+        if: failure()
+        run: |
+          URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          MSG="❌ Early Hints patch build FAILED for repo ${{ github.repository }} on $(date -u +'%Y-%m-%d %H:%M:%S UTC')%0A🔗 $URL"
+          curl -s -X POST https://api.telegram.org/bot${{ secrets.TG_BOT_TOKEN }}/sendMessage \
+            -d chat_id=${{ secrets.TG_CHAT_ID }} \
+            -d text="$MSG"
+>>>>>>> Stashed changes
