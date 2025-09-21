@@ -57,16 +57,6 @@ jobs:
           } > "$PATCH"
           echo "PATCH=$PATCH" >> $GITHUB_ENV
 
-      - name: Skip if patch unchanged
-        run: |
-          if gh release view latest &>/dev/null; then
-            gh release download latest --pattern early_hints.patch --dir . --output early_hints_old.patch
-            if cmp -s early_hints.patch early_hints_old.patch; then
-              echo "⏹ Patch is unchanged, skipping release."
-              exit 0
-            fi
-          fi
-
       - name: Delete old "latest" release and tag
         run: |
           gh release delete latest --yes || true
@@ -83,14 +73,14 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
 
-      - name: Notify Telegram on success
-        if: success()
-        run: |
-          URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          MSG="✅ Early Hints patch build SUCCEEDED for repo ${{ github.repository }} on $(date -u +'%Y-%m-%d %H:%M:%S UTC')%0A🔗 $URL"
-          curl -s -X POST https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage \
-            -d chat_id=${TG_CHAT_ID} \
-            -d text="$MSG"
+      # - name: Notify Telegram on success
+      #   if: success()
+      #   run: |
+      #     URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+      #     MSG="✅ Early Hints patch build SUCCEEDED for repo ${{ github.repository }} on $(date -u +'%Y-%m-%d %H:%M:%S UTC')%0A🔗 $URL"
+      #     curl -s -X POST https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage \
+      #       -d chat_id=${TG_CHAT_ID} \
+      #       -d text="$MSG"
 
       - name: Notify Telegram on failure
         if: failure()
