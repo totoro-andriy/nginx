@@ -45,7 +45,6 @@ jobs:
             echo "#"
             echo "# Early Hints patch for Nginx"
             echo "# Documentation: https://github.com/${{ github.repository }}/blob/master/README.early-hints.md"
-            echo "# Generated on $(date -u +"%Y-%m-%d %H:%M:%S UTC")"
             echo "#"
             git format-patch upstream/master..HEAD --stdout \
               -- . \
