@@ -12,6 +12,8 @@
 #include <nginx.h>
 #include <ngx_http_v2_module.h>
 
+#include <ngx_http_early_hints_module.h>
+
 
 /*
  * This returns precise number of octets for values in range 0..253
@@ -639,6 +641,8 @@ ngx_http_v2_early_hints_filter(ngx_http_request_t *r)
     ngx_http_v2_stream_t      *stream;
     ngx_http_v2_out_frame_t   *frame;
     ngx_http_v2_connection_t  *h2c;
+
+    ngx_http_add_custom_early_hint_links(r);
 
     stream = r->stream;
 

@@ -10,6 +10,7 @@
 #include <ngx_http.h>
 #include <nginx.h>
 
+#include <ngx_http_early_hints_module.h>
 
 static ngx_int_t ngx_http_header_filter_init(ngx_conf_t *cf);
 static ngx_int_t ngx_http_header_filter(ngx_http_request_t *r);
@@ -645,6 +646,12 @@ ngx_http_early_hints_filter(ngx_http_request_t *r)
 
     if (r->http_version < NGX_HTTP_VERSION_11) {
         return NGX_OK;
+    }
+
+    if (ngx_http_add_custom_early_hint_links(r) != NGX_OK) {
+        ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                      "early hints: failed to add custom hint links");
+        return NGX_ERROR;
     }
 
     len = 0;
