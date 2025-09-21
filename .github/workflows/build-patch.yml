@@ -1,0 +1,39 @@
+name: Build Early Hints Patch
+
+on:
+  schedule:
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+  push:
+    branches:
+      - early-hints-root
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Add upstream
+        run: |
+          git remote add upstream https://github.com/nginx/nginx.git || true
+          git fetch upstream --prune
+
+      - name: Rebase onto upstream
+        run: |
+          git checkout early-hints-root
+          git rebase upstream/master || true
+
+      - name: Generate patch (exclude README files)
+        run: |
+          PATCH="early_hints_patch_${{ github.run_id }}.patch"
+          git format-patch upstream/master..HEAD --stdout \
+            -- . ':(exclude)README.md' ':(exclude)README.early-hints.md' > "$PATCH"
+          echo "PATCH=$PATCH" >> $GITHUB_ENV
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: early-hints-patch
+          path: ${{ env.PATCH }}
