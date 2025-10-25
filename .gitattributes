@@ -1,0 +1,4 @@
+*.sh text eol=lf
+*/configure text eol=lf
+auto/* text eol=lf
+
