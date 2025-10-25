@@ -8,7 +8,7 @@
 #include <ngx_config.h>
 #include <ngx_core.h>
 #include <ngx_http.h>
-
+#include <ngx_http_early_hints_module.h>
 
 /* static table indices */
 #define NGX_HTTP_V3_HEADER_AUTHORITY                 0
@@ -605,8 +605,18 @@ ngx_http_v3_early_hints_filter(ngx_http_request_t *r)
         return ngx_http_next_early_hints_filter(r);
     }
 
+    if (ngx_http_add_custom_early_hint_links(r) != NGX_OK) {
+        ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                      "early hints: failed to add custom hint links");
+        return ngx_http_next_early_hints_filter(r);
+    }
+
     if (r->header_sent || r != r->main) {
         return NGX_OK;
+    }
+
+    if (r->err_status) {
+        return ngx_http_next_early_hints_filter(r);
     }
 
     len = 0;
