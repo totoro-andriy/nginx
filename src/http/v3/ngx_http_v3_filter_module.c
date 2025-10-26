@@ -9,6 +9,7 @@
 #include <ngx_core.h>
 #include <ngx_http.h>
 
+#include <ngx_http_early_hints_module.h>
 
 /* static table indices */
 #define NGX_HTTP_V3_HEADER_AUTHORITY                 0
@@ -605,6 +606,8 @@ ngx_http_v3_early_hints_filter(ngx_http_request_t *r)
     if (r->http_version != NGX_HTTP_VERSION_30) {
         return ngx_http_next_early_hints_filter(r);
     }
+
+    ngx_http_add_custom_early_hint_links(r);
 
     if (r != r->main) {
         return NGX_OK;
